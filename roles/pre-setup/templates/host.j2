@@ -1,0 +1,21 @@
+{
+  "CN": "{{ansible_fqdn}}",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "IN",
+      "L": "Bangalore",
+      "O": "Aether Org",
+      "OU": "Aether Org Intermediate CA",
+      "ST": "KA"
+    }
+
+  ],
+  "hosts": [
+    "{{ansible_fqdn}}",
+    "localhost"
+  ]
+}

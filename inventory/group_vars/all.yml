@@ -1,0 +1,6 @@
+cfssl_ver_url: "https://api.github.com/repos/cloudflare/cfssl/releases/latest"
+cfssl_download_url: "https://github.com/cloudflare/cfssl/releases/download"
+cfssl_local_path: "/usr/local/bin/cfssl"
+ssl_gen_dir: "{{lookup('env', 'HOME')}}/certs"
+ca_ssl_key: "{{ssl_gen_dir}}/minikube-ca.key"
+ca_ssl_cert: "{{ssl_gen_dir}}/minikube-ca.crt"

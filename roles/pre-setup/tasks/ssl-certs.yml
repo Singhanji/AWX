@@ -1,0 +1,124 @@
+---
+
+- name: Install required packages
+  dnf:
+    name:
+      - openssl
+      - golang
+    state: latest
+  become: yes
+
+- name: Get stat of {{cfssl_local_path}}
+  stat:
+    path: "{{cfssl_local_path}}"
+  register: _cfssl_path
+
+- block:
+  - name: Get cfssl tool version
+    script: cfssl-version.sh
+    register: cfssl_version
+
+  - debug:
+      var: cfssl_version.stdout_lines.0
+
+  - name: Download latest cfssl tool
+    get_url:
+      url: "{{cfssl_download_url}}/v{{cfssl_version.stdout_lines.0}}/cfssl_{{cfssl_version.stdout_lines.0}}_linux_amd64"
+      dest: "{{cfssl_local_path}}"
+      mode: 0755
+      owner: root
+      group: root
+    become: yes
+
+  - name: Download cfssljson
+    command: go get -u github.com/cloudflare/cfssl/cmd/cfssljson
+
+  - name: Copy download cfssljson to /usr/local/bin
+    copy:
+      src: "{{lookup('env', 'HOME')}/go/bin/cfssljson"
+      dest: /usr/local/bin/
+      remote_src: yes
+  when: not _cfssl_path.stat.exists
+
+- name: Create {{ssl_gen_dir}}
+  file:
+    path: "{{ssl_gen_dir}}"
+    state: directory
+
+- name: Copy Cert related json files to target machine
+  copy:
+    src: "{{item}}"
+    dest: "{{ssl_gen_dir}}"
+    mode: 0644
+  with_items:
+    - "ca.json"
+    - "cfssl.json"
+    - "intermediate-ca.json"
+
+- name: template out host cert
+  template:
+    src: host.j2
+    dest: "{{ssl_gen_dir}}/host.json"
+    mode: 0644
+
+- name: Generate CA cert and Key
+  shell: cfssl gencert -initca ca.json | cfssljson -bare ca
+  register: _ca_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _ca_cert.stdout_lines
+
+- name: Create intermediate certs
+  shell: cfssl gencert -initca intermediate-ca.json | cfssljson -bare intermediate_ca
+  register: _inter_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _inter_cert.stdout_lines
+
+- name: Sign the certs
+  shell: |
+      cfssl sign -ca ca.pem -ca-key ca-key.pem -config cfssl.json \
+        -profile intermediate_ca intermediate_ca.csr | cfssljson -bare intermediate_ca
+  register: _sign_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _sign_cert.stdout_lines
+
+- name: Generate peer cert
+  shell: |
+      cfssl gencert -ca intermediate_ca.pem -ca-key intermediate_ca-key.pem \
+        -config cfssl.json -profile=peer host.json | cfssljson -bare host-peer
+  register: _peer_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _peer_cert.stdout_lines
+
+- name: Generate Server cert
+  shell: |
+      cfssl gencert -ca intermediate_ca.pem -ca-key intermediate_ca-key.pem \
+        -config cfssl.json -profile=peer host.json | cfssljson -bare host-server
+  register: _server_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _server_cert.stdout_lines
+
+- name: Generate Client cert
+  shell: |
+      cfssl gencert -ca intermediate_ca.pem -ca-key intermediate_ca-key.pem \
+        -config cfssl.json -profile=client host.json | cfssljson -bare host-client
+  register: _client_cert
+  args:
+    chdir: "{{ssl_gen_dir}}"
+
+- debug:
+    var: _client_cert.stdout_lines

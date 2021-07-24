@@ -1,0 +1,16 @@
+{
+  "CN": "Aether Org Root CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+  {
+    "C": "IN",
+    "L": "Bangalore",
+    "ST": "KA",
+    "O": "Aether Org",
+    "OU": "Aether Org Root CA"
+  }
+ ]
+}

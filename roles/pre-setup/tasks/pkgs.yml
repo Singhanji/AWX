@@ -1,0 +1,22 @@
+---
+- name: Install podman
+  dnf:
+    name:
+      - podman
+      - git
+    state: latest
+
+- name: Download minikube
+  get_url:
+    url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    dest: /usr/local/bin/minikube
+    owner: root
+    group: root
+    mode: 0755
+  when: download_minikube|bool
+
+- name: Clone awx repo
+  git:
+    repo: "{{awx_repo}}"
+    dest: "{{awx_dest}}"
+  when: force_awx_repo_pull|bool

@@ -1,0 +1,2 @@
+# ansible_user must have sudo access
+labhost1 ansible_host=192.168.10.235 ansible_user=aether ansible_connection=ssh ansible_password=redhat

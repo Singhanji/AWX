@@ -1,0 +1,7 @@
+---
+
+- name: Set podman as default driver for minikube
+  command: minikube config set driver podman
+
+- name: Setup minikube cluster
+  command: minikube start --addons=ingress --cni=flannel --install-addons=true --kubernetes-version=stable

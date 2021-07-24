@@ -1,0 +1,4 @@
+force_awx_repo_pull: false
+download_minikube: false
+awx_dest: "{{lookup('env', 'HOME')}}/awx"
+awx_repo: "https://github.com/ansible/awx.git"
